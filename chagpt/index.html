@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>ChatGPT Demo</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+      
+      h1 {
+        margin-top: 20px;
+        margin-bottom: 10px;
+      }
+      
+      #chat-container {
+        margin-top: 20px;
+        margin-bottom: 20px;
+        padding: 10px;
+        border: 1px solid #ccc;
+        height: 400px;
+        overflow-y: auto;
+      }
+      
+      .message-container {
+        margin-bottom: 10px;
+      }
+      
+      .message-bubble {
+        padding: 5px 10px;
+        border-radius: 5px;
+        max-width: 80%;
+        word-wrap: break-word;
+      }
+      
+      .user-message-container {
+        text-align: right;
+      }
+      
+      .chatgpt-message-container {
+        text-align: left;
+      }
+      
+      #input-container {
+        margin-top: 20px;
+      }
+      
+      #input-box {
+        width: 80%;
+        padding: 5px;
+        font-size: 14px;
+        border: 1px solid #ccc;
+      }
+      
+      #send-button {
+        padding: 5px 10px;
+        font-size: 14px;
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        margin-left: 10px;
+      }
+      
+      #send-button:disabled {
+        background-color: #ddd;
+        cursor: default;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>ChatGPT Demo</h1>
+    <div id="chat-container"></div>
+    <div id="input-container">
+      <input type="text" id="input-box" placeholder="Type your message here...">
+      <button id="send-button" disabled>Send</button>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+      const api_key = "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";
+      const endpoint = "https://api.openai.com/v1/engines/davinci-codex/completions";
+      const prompt = "I need help with ";
+      
+      // 用于检查输入框是否为空，并启用或禁用发送按钮
+      function checkInput() {
+        const inputBox = $("#input-box");
+        const sendButton = $("#send-button");
+        if (inputBox.val() !== "") {
+          sendButton.prop("disabled", false);
+        } else {
+          sendButton.prop("disabled", true);
+        }
+      }
+      
+      // 处理输入框文本变
+      // 处理输入框文本变化
+      $("#input-box").on("input", function() {
+        checkInput();
+      });
+      
+      // 处理发送按钮点击
+      $("#send-button").on("click", function() {
+        const inputBox = $("#input-box");
+        const messageText = inputBox.val();
+        inputBox.val("");
+        checkInput();
+        addMessage(messageText, true);
+        sendToChatGPT(messageText);
+      });
+      
+      // 将消息添加到聊天窗口
+      function addMessage(message, isUser) {
+        const messageClass = isUser ? "user-message-container" : "chatgpt-message-container";
+        const messageBubbleClass = isUser ? "message-bubble user-message-bubble" : "message-bubble chatgpt-message-bubble";
+        const messageContainer = $("<div>", {"class": "message-container " + messageClass});
+        const messageBubble = $("<div>", {"class": messageBubbleClass, "text": message});
+        messageContainer.append(messageBubble);
+        $("#chat-container").append(messageContainer);
+        $("#chat-container").scrollTop($("#chat-container").prop("scrollHeight"));
+      }
+      
+      // 使用 ChatGPT 完成输入文本
+      function sendToChatGPT(inputText) {
+        const promptWithInput = prompt + inputText;
+        $.ajax({
+          url: endpoint,
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + api_key
+          },
+          data: JSON.stringify({
+            "prompt": promptWithInput,
+            "max_tokens": 100,
+            "temperature": 0.7,
+            "stop": "\n",
+            "n": 1
+          })
+        }).done(function(data) {
+          const outputText = data.choices[0].text.trim();
+          addMessage(outputText, false);
+        }).fail(function(jqXHR, textStatus, errorThrown) {
+          addMessage("Sorry, something went wrong. Please try again later.", false);
+        });
+      }
+      
+      // 将输入框初始化为空并禁用发送按钮
+      $("#input-box").val("");
+      checkInput();
+    </script>
+  </body>
+</html>
